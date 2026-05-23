@@ -11,11 +11,21 @@ interface User {
   nombre: string;
   email: string;
   saldoHoras: number;
-  bio?: string; // 👈 NUEVO: Añadimos la biografía al perfil
+  bio?: string; 
   habilidades: Skill[];
   enviados?: Transaction[];
   recibidos?: Transaction[];
 }
+
+// 🎨 NUEVO: Función para extraer iniciales y generar el Avatar
+const getInitials = (name: string) => {
+  if (!name) return "U";
+  const words = name.trim().split(" ");
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+  return words[0][0].toUpperCase();
+};
 
 function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
@@ -33,7 +43,6 @@ function App() {
   const [view, setView] = useState<"explorar" | "perfil">("explorar");
   const [myProfile, setMyProfile] = useState<User | null>(null);
 
-  // NUEVO: Estados para la edición del perfil
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editNombre, setEditNombre] = useState("");
   const [editBio, setEditBio] = useState("");
@@ -111,7 +120,6 @@ function App() {
     } catch (error) { console.error(error); }
   };
 
-  // NUEVO: Función para guardar los cambios del perfil en el backend
   const handleUpdateProfile = async () => {
     try {
       const response = await fetch(`http://localhost:3000/users/${currentUserId}`, {
@@ -119,14 +127,10 @@ function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nombre: editNombre, bio: editBio }),
       });
-      
       if (!response.ok) throw new Error("Error al actualizar el perfil");
-      
-      await fetchMyProfile(); // Recargamos los datos para ver los cambios
-      setIsEditingProfile(false); // Cerramos el modo edición
-    } catch (error) {
-      console.error(error);
-    }
+      await fetchMyProfile(); 
+      setIsEditingProfile(false); 
+    } catch (error) { console.error(error); }
   };
 
   useEffect(() => {
@@ -161,18 +165,22 @@ function App() {
     }
   };
 
+  // ==========================================
+  // ZONA PÚBLICA
+  // ==========================================
   if (!token) {
     if (authView === "landing") {
       return (
-        <div className="min-h-screen bg-zinc-50 font-sans text-zinc-900 selection:bg-zinc-200">
-          <nav className="flex justify-between items-center py-6 px-8 max-w-7xl mx-auto">
+        <div className="min-h-screen flex flex-col bg-zinc-50 font-sans text-zinc-900 selection:bg-zinc-200">
+          <nav className="flex justify-between items-center py-6 px-8 max-w-7xl mx-auto w-full">
             <div className="text-xl font-extrabold tracking-tight">Banco de Tiempo.</div>
             <div className="space-x-4">
               <Button variant="ghost" onClick={() => { setAuthView("login"); setAuthMessage(""); }}>Iniciar sesión</Button>
               <Button onClick={() => { setAuthView("register"); setAuthMessage(""); }}>Crear cuenta</Button>
             </div>
           </nav>
-          <main className="max-w-5xl mx-auto px-8 pt-24 pb-32 text-center space-y-8">
+          
+          <main className="flex-grow max-w-5xl mx-auto px-8 pt-24 pb-32 text-center space-y-8">
             <h1 className="text-6xl md:text-8xl font-extrabold tracking-tighter leading-tight">
               Tu tiempo es <br className="hidden md:block"/><span className="text-zinc-400">tu mejor moneda.</span>
             </h1>
@@ -183,6 +191,7 @@ function App() {
               <Button size="lg" className="h-14 px-8 text-lg" onClick={() => setAuthView("register")}>Empezar ahora — Es gratis</Button>
             </div>
           </main>
+          
           <section className="border-t border-zinc-200 bg-white py-24">
             <div className="max-w-7xl mx-auto px-8 grid md:grid-cols-3 gap-12 text-center">
               <div className="space-y-4">
@@ -202,6 +211,24 @@ function App() {
               </div>
             </div>
           </section>
+
+          {/* 🎨 NUEVO: FOOTER CORPORATIVO */}
+          <footer className="bg-zinc-50 border-t border-zinc-200 py-12">
+            <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center text-sm text-zinc-500">
+              <div className="mb-4 md:mb-0">
+                <span className="font-extrabold text-zinc-900 text-lg">Banco de Tiempo.</span>
+                <p className="mt-1">Redefiniendo el valor del talento.</p>
+              </div>
+              <div className="flex space-x-6 font-medium">
+                <a href="#" className="hover:text-zinc-900 transition-colors">Términos</a>
+                <a href="#" className="hover:text-zinc-900 transition-colors">Privacidad</a>
+                <a href="#" className="hover:text-zinc-900 transition-colors">Twitter</a>
+              </div>
+              <div className="mt-4 md:mt-0">
+                © {new Date().getFullYear()} Banco de Tiempo. Todos los derechos reservados.
+              </div>
+            </div>
+          </footer>
         </div>
       );
     }
@@ -238,6 +265,9 @@ function App() {
     );
   }
 
+  // ==========================================
+  // ZONA PRIVADA (DASHBOARD)
+  // ==========================================
   return (
     <div className="min-h-screen bg-zinc-50 p-8 md:p-16 font-sans text-zinc-900">
       <div className="max-w-5xl mx-auto space-y-10">
@@ -250,7 +280,17 @@ function App() {
                 Tu saldo actual es de <span className="font-bold text-emerald-600">{myProfile?.saldoHoras || 0} horas</span>.
               </p>
             </div>
-            <Button variant="outline" onClick={handleLogout}>Cerrar sesión</Button>
+            {/* 🎨 NUEVO: Tu propio avatar en la cabecera */}
+            <div className="flex items-center space-x-4">
+              <div className="hidden md:flex flex-col text-right">
+                <span className="text-sm font-bold text-zinc-900">{myProfile?.nombre}</span>
+                <span className="text-xs text-zinc-500">Sesión iniciada</span>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-sm">
+                {getInitials(myProfile?.nombre || "U")}
+              </div>
+              <Button variant="outline" onClick={handleLogout} className="ml-4">Salir</Button>
+            </div>
           </div>
           
           <div className="flex space-x-2 border-b border-zinc-200 pb-px">
@@ -283,12 +323,17 @@ function App() {
                 users.map((user) => (
                   <Card key={user.id} className="bg-white shadow-sm border-zinc-200 hover:shadow-md transition-shadow flex flex-col justify-between">
                     <div>
-                      <CardHeader>
-                        <CardTitle className="text-xl">{user.nombre}</CardTitle>
-                        <CardDescription className="text-zinc-500">{user.email}</CardDescription>
+                      {/* 🎨 NUEVO: Avatar integrado en la tarjeta del profesional */}
+                      <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-4">
+                        <div className="w-12 h-12 rounded-full bg-zinc-100 border border-zinc-200 text-zinc-800 flex items-center justify-center font-bold text-lg shrink-0">
+                          {getInitials(user.nombre)}
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg leading-tight">{user.nombre}</CardTitle>
+                          <CardDescription className="text-zinc-500">{user.email}</CardDescription>
+                        </div>
                       </CardHeader>
-                      <CardContent className="space-y-4">
-                        {/* Mostramos un poco de la bio si la tienen */}
+                      <CardContent className="space-y-4 pt-0">
                         {user.bio && <p className="text-sm text-zinc-600 italic line-clamp-2">"{user.bio}"</p>}
                         
                         <div className="text-sm font-medium text-zinc-700">
@@ -342,7 +387,6 @@ function App() {
         {view === "perfil" && (
           <div className="space-y-12">
             
-            {/* NUEVA SECCIÓN: Editar Biografía */}
             <Card className="bg-white border-zinc-200 shadow-sm max-w-2xl">
               <CardHeader>
                 <CardTitle className="text-2xl">Mi Información Profesional</CardTitle>
@@ -372,7 +416,17 @@ function App() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <p className="text-lg font-bold text-zinc-900">{myProfile?.nombre}</p>
+                    {/* 🎨 NUEVO: Avatar grande en tu perfil */}
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-16 h-16 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-2xl shrink-0">
+                        {getInitials(myProfile?.nombre || "U")}
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-zinc-900">{myProfile?.nombre}</p>
+                        <p className="text-zinc-500">{myProfile?.email}</p>
+                      </div>
+                    </div>
+                    
                     <p className="text-zinc-600 italic">
                       {myProfile?.bio ? `"${myProfile.bio}"` : "Aún no tienes una biografía. ¡Cuéntanos quién eres!"}
                     </p>
@@ -388,7 +442,7 @@ function App() {
               </CardContent>
             </Card>
 
-            {/* SECCIÓN: Historial Financiero (Se mantiene igual) */}
+            {/* SECCIÓN: Historial Financiero */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-zinc-200 pt-8">
               <div className="space-y-4">
                 <h3 className="text-lg font-bold text-zinc-900 flex items-center">
