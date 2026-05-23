@@ -1,0 +1,95 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                String        @id @default(uuid())
+  nombre            String
+  email             String        @unique
+  password          String
+  titulo            String        @default("Profesional Independiente") // 
+  bio               String?       // Tu resumen profesional
+  linkedinUrl       String?       // 
+  githubUrl         String?       //
+  portfolioUrl      String?
+  saldoHoras        Float         @default(10.0)
+  createdAt         DateTime      @default(now())
+  
+  habilidades       Skill[]       @relation("UserSkills")
+  enviados          Transaction[] @relation("Sender")
+  recibidos         Transaction[] @relation("Receiver")
+  misionesCreadas   Mission[]     @relation("MisionesCreadas")
+  misionesAsignadas Mission[]     @relation("MisionesAsignadas")
+  mensajesEnviados  Message[]     @relation("MensajesEnviados")
+  mensajesRecibidos Message[]     @relation("MensajesRecibidos")
+
+  postulaciones Application[]
+}
+
+model Skill {
+  id       String @id @default(uuid())
+  nombre   String @unique
+  usuarios User[] @relation("UserSkills")
+}
+
+model Transaction {
+  id          String   @id @default(uuid())
+  cantidad    Float
+  descripcion String
+  createdAt   DateTime @default(now())
+
+  senderId    String
+  sender      User     @relation("Sender", fields: [senderId], references: [id])
+
+  receiverId  String
+  receiver    User     @relation("Receiver", fields: [receiverId], references: [id])
+}
+
+model Message {
+  id          String   @id @default(uuid())
+  contenido   String
+  leido       Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  remitenteId String
+  remitente   User     @relation("MensajesEnviados", fields: [remitenteId], references: [id])
+  
+  receptorId  String
+  receptor    User     @relation("MensajesRecibidos", fields: [receptorId], references: [id])
+}
+
+model Mission {
+  id           String   @id @default(uuid())
+  titulo       String
+  descripcion  String
+  horas        Float
+  estado       String   @default("ABIERTA") // ABIERTA, PROGRESO, COMPLETADA
+  createdAt    DateTime @default(now())
+  
+  autorId      String
+  autor        User     @relation("MisionesCreadas", fields: [autorId], references: [id])
+
+  workerId     String?
+  worker       User?    @relation("MisionesAsignadas", fields: [workerId], references: [id])
+
+  postulantes   Application[]
+}
+
+model Application {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  estado    String   @default("PENDIENTE") // PENDIENTE, RECHAZADO
+
+  missionId String
+  mission   Mission  @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  applicantId String
+  applicant   User     @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+
+  @@unique([missionId, applicantId]) // Evita que alguien se postule dos veces a la misma misión
+}
