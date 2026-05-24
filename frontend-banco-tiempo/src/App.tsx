@@ -124,11 +124,17 @@ function App() {
     localStorage.clear(); setToken(null); setView("talento"); setAuthView("landing");
   };
 
-  const fetchUsers = async (query: string = "") => {
+const fetchUsers = async (query: string = "") => {
     try {
-      const url = query ? `${API_URL}users/search?skill=${query}` : `http://localhost:3000/users/search`;
-      const response = await fetch(url); setUsers(await response.json());
-    } catch (error) { console.error(error); }
+      const url = query 
+        ? `${API_URL}/users/search?skill=${query}` 
+        : `${API_URL}/users/search`;
+        
+      const response = await fetch(url); 
+      setUsers(await response.json());
+    } catch (error) { 
+      console.error(error); 
+    }
   };
 
   const fetchUnreadCounts = async () => {
