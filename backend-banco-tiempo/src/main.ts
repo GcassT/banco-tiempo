@@ -5,7 +5,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: '*', // En producción pondrías la URL exacta de tu frontend
+    origin: [
+      'http://localhost:5173',           // Para que sigas haciendo pruebas en tu PC
+      'https://banco-tiempo-two.vercel.app'
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
