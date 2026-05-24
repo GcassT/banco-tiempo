@@ -39,6 +39,8 @@ function App() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(localStorage.getItem("userId")); 
   
   const [authView, setAuthView] = useState<"landing" | "login" | "register">("landing");
+
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
   
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
@@ -84,7 +86,7 @@ function App() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault(); setAuthMessage("");
     try {
-      const response = await fetch("http://localhost:3000/users", {
+      const response = await fetch(`${API_URL}/users`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nombre, email, password, titulo: regTitulo, bio: regBio, linkedinUrl: regLinkedin, githubUrl: regGithub }),
@@ -97,7 +99,7 @@ function App() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:3000/auth/login", {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -124,7 +126,7 @@ function App() {
 
   const fetchUsers = async (query: string = "") => {
     try {
-      const url = query ? `http://localhost:3000/users/search?skill=${query}` : `http://localhost:3000/users/search`;
+      const url = query ? `${API_URL}users/search?skill=${query}` : `http://localhost:3000/users/search`;
       const response = await fetch(url); setUsers(await response.json());
     } catch (error) { console.error(error); }
   };
@@ -132,14 +134,14 @@ function App() {
   const fetchUnreadCounts = async () => {
     if (!currentUserId) return;
     try {
-      const res = await fetch(`http://localhost:3000/users/messages/unread-counts/${currentUserId}`);
+      const res = await fetch(`${API_URL}/users/messages/unread-counts/${currentUserId}`);
       setUnreadLogs(await res.json());
     } catch (error) { console.error(error); }
   };
 
   const handleMarkAsRead = async (otherUserId: string) => {
     try {
-      await fetch("http://localhost:3000/users/messages/read", {
+      await fetch("${API_URL}/users/messages/read", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ remitenteId: otherUserId, receptorId: currentUserId }),
@@ -152,7 +154,7 @@ function App() {
     const delayDebounce = setTimeout(async () => {
       if (searchTerm.trim().length >= 2) {
         try {
-          const res = await fetch(`http://localhost:3000/users/skills/suggestions?q=${searchTerm}`);
+          const res = await fetch(`${API_URL}/users/skills/suggestions?q=${searchTerm}`);
           setSuggestions(await res.json()); setShowSuggestions(true);
         } catch (error) { console.error(error); }
       } else { setSuggestions([]); setShowSuggestions(false); }
@@ -163,21 +165,21 @@ function App() {
   const fetchMyProfile = async () => {
     if (!currentUserId) return;
     try {
-      const response = await fetch(`http://localhost:3000/users/${currentUserId}`);
+      const response = await fetch(`${API_URL}/users/${currentUserId}`);
       setMyProfile(await response.json());
     } catch (error) { console.error(error); }
   };
 
   const fetchMissions = async () => {
     try {
-      const response = await fetch("http://localhost:3000/users/missions/all");
+      const response = await fetch("${API_URL}/users/missions/all");
       setMissions(await response.json());
     } catch (error) { console.error(error); }
   };
 
   const fetchChatHistory = async (otherUserId: string) => {
     try {
-      const response = await fetch(`http://localhost:3000/users/messages/chat?userA=${currentUserId}&userB=${otherUserId}`);
+      const response = await fetch(`${API_URL}/users/messages/chat?userA=${currentUserId}&userB=${otherUserId}`);
       setChatMessages(await response.json());
     } catch (error) { console.error(error); }
   };
@@ -185,7 +187,7 @@ function App() {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault(); if (!nuevoMensajeTexto.trim() || !activeChatUser) return;
     try {
-      const response = await fetch("http://localhost:3000/users/messages", {
+      const response = await fetch("${API_URL}/users/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ remitenteId: currentUserId, receptorId: activeChatUser.id, contenido: nuevoMensajeTexto }),
@@ -209,7 +211,7 @@ function App() {
   const handleCreateMission = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await fetch("http://localhost:3000/users/missions", {
+      await fetch("${API_URL}/users/missions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ autorId: currentUserId, titulo: misionTitulo, descripcion: misionDescripcion, horas: parseFloat(misionHoras) }),
@@ -220,13 +222,13 @@ function App() {
 
   const handleApplyToMission = async (mission: Mission) => {
     try {
-      const response = await fetch(`http://localhost:3000/users/missions/${mission.id}/apply`, {
+      const response = await fetch(`${API_URL}/users/missions/${mission.id}/apply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ applicantId: currentUserId }),
       });
       if (!response.ok) { alert("Ya estás postulado."); return; }
-      await fetch("http://localhost:3000/users/messages", {
+      await fetch("${API_URL}/users/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ remitenteId: currentUserId, receptorId: mission.autorId, contenido: `¡Hola! Acabo de postularme formalmente a tu misión: "${mission.titulo}".` }),
@@ -237,7 +239,7 @@ function App() {
 
   const handleAcceptWorker = async (missionId: string, workerId: string) => {
     try {
-      const response = await fetch(`http://localhost:3000/users/missions/${missionId}/accept`, {
+      const response = await fetch(`${API_URL}/users/missions/${missionId}/accept`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ workerId }),
@@ -249,14 +251,14 @@ function App() {
 
   const handleRejectApplicant = async (applicationId: string) => {
     try {
-      const response = await fetch(`http://localhost:3000/users/applications/${applicationId}`, { method: "DELETE" });
+      const response = await fetch(`${API_URL}/users/applications/${applicationId}`, { method: "DELETE" });
       if (response.ok) { alert("Postulante descartado."); fetchMissions(); }
     } catch (error) { console.error(error); }
   };
 
   const handleCompleteMission = async (missionId: string) => {
     try {
-      const response = await fetch(`http://localhost:3000/users/missions/${missionId}/complete`, { method: "PATCH" });
+      const response = await fetch(`${API_URL}/users/missions/${missionId}/complete`, { method: "PATCH" });
       if (!response.ok) throw new Error("Error");
       alert("¡Trabajo completado con éxito!"); fetchMissions(); fetchMyProfile();
     } catch (error) { console.error(error); }
@@ -264,7 +266,7 @@ function App() {
 
   const handleUpdateProfile = async () => {
     try {
-      await fetch(`http://localhost:3000/users/${currentUserId}`, {
+      await fetch(`${API_URL}/users/${currentUserId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nombre: editNombre, titulo: editTitulo, bio: editBio, linkedinUrl: editLinkedin, githubUrl: editGithub }),
@@ -291,7 +293,7 @@ function App() {
   const handleTransfer = async (receptorId: string) => {
     setTransferMessage("");
     try {
-      const response = await fetch("http://localhost:3000/transactions", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }, body: JSON.stringify({ senderId: currentUserId, receiverId: receptorId, cantidad: parseFloat(horasATransferir), descripcion: descripcionTransaccion || "Transferencia de horas" }), });
+      const response = await fetch("${API_URL}/transactions", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }, body: JSON.stringify({ senderId: currentUserId, receiverId: receptorId, cantidad: parseFloat(horasATransferir), descripcion: descripcionTransaccion || "Transferencia de horas" }), });
       if (!response.ok) throw new Error("Error");
       setTransferMessage("¡Transferencia exitosa! 🎉"); setHorasATransferir(""); setDescripcionTransaccion(""); fetchUsers(); fetchMyProfile();
       setTimeout(() => setTransferMessage(""), 3000);
