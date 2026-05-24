@@ -141,7 +141,7 @@ function App() {
 
   const handleMarkAsRead = async (otherUserId: string) => {
     try {
-      await fetch("${API_URL}/users/messages/read", {
+      await fetch(`${API_URL}/users/messages/read`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ remitenteId: otherUserId, receptorId: currentUserId }),
@@ -172,7 +172,7 @@ function App() {
 
   const fetchMissions = async () => {
     try {
-      const response = await fetch("${API_URL}/users/missions/all");
+      const response = await fetch(`${API_URL}/users/missions/all`);
       setMissions(await response.json());
     } catch (error) { console.error(error); }
   };
@@ -187,7 +187,7 @@ function App() {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault(); if (!nuevoMensajeTexto.trim() || !activeChatUser) return;
     try {
-      const response = await fetch("${API_URL}/users/messages", {
+      const response = await fetch(`${API_URL}/users/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ remitenteId: currentUserId, receptorId: activeChatUser.id, contenido: nuevoMensajeTexto }),
@@ -211,7 +211,7 @@ function App() {
   const handleCreateMission = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await fetch("${API_URL}/users/missions", {
+      await fetch(`${API_URL}/users/missions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ autorId: currentUserId, titulo: misionTitulo, descripcion: misionDescripcion, horas: parseFloat(misionHoras) }),
@@ -228,7 +228,7 @@ function App() {
         body: JSON.stringify({ applicantId: currentUserId }),
       });
       if (!response.ok) { alert("Ya estás postulado."); return; }
-      await fetch("${API_URL}/users/messages", {
+      await fetch(`${API_URL}/users/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ remitenteId: currentUserId, receptorId: mission.autorId, contenido: `¡Hola! Acabo de postularme formalmente a tu misión: "${mission.titulo}".` }),
@@ -293,7 +293,7 @@ function App() {
   const handleTransfer = async (receptorId: string) => {
     setTransferMessage("");
     try {
-      const response = await fetch("${API_URL}/transactions", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }, body: JSON.stringify({ senderId: currentUserId, receiverId: receptorId, cantidad: parseFloat(horasATransferir), descripcion: descripcionTransaccion || "Transferencia de horas" }), });
+      const response = await fetch(`${API_URL}/transactions`, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }, body: JSON.stringify({ senderId: currentUserId, receiverId: receptorId, cantidad: parseFloat(horasATransferir), descripcion: descripcionTransaccion || "Transferencia de horas" }), });
       if (!response.ok) throw new Error("Error");
       setTransferMessage("¡Transferencia exitosa! 🎉"); setHorasATransferir(""); setDescripcionTransaccion(""); fetchUsers(); fetchMyProfile();
       setTimeout(() => setTransferMessage(""), 3000);
